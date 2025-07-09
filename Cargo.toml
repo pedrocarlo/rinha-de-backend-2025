@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members  = ["backend_core"]
+members  = ["backend", "backend_core"]
 
 [workspace.package]
 version    = "0.0.1"
@@ -8,3 +8,14 @@ authors    = ["pedrocarlo"]
 edition    = "2024"
 license    = "MIT"
 repository = "https://github.com/pedrocarlo/rinha-de-backend-2025"
+
+[workspace.dependencies]
+serde              = { version = "1.0", features = ["derive"] }
+serde_json         = "1.0"
+thiserror          = "2.0.12"
+tracing            = "0.1.41"
+tokio              = "1.46.1"
+axum               = "0.8.4"
+futures-util       = "0.3.31"
+tower              = "0.5.2"
+tracing-subscriber = "0.3.19"
