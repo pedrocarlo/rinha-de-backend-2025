@@ -25,3 +25,17 @@ chrono = { version = "0.4.41", default-features = false, features = [
     "now",
     "iana-time-zone",
 ] }
+
+[profile.release]
+debug         = "line-tables-only"
+codegen-units = 1
+panic         = "abort"
+lto           = true
+
+[profile.bench-profile]
+inherits = "release"
+debug    = true
+
+[profile.dist]
+inherits = "release"
+lto      = "thin"

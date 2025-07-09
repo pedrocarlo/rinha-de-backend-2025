@@ -1,0 +1,63 @@
+name: Rust
+
+on:
+  push:
+    branches: ["default"]
+  pull_request:
+    branches: ["default"]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  cargo-fmt-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Check formatting
+        run: cargo fmt --check
+
+  build-native:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: swatinem/rust-cache@v2
+        with:
+          prefix-key: "v1-rust" # can be updated if we need to reset caches due to non-trivial change in the dependencies (for example, custom env var were set for single workspace project)
+      - name: Build
+        env:
+          RUST_LOG: ${{ runner.debug }}
+        run: cargo build
+        timeout-minutes: 20
+
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Clippy
+        run: cargo clippy
+
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          prefix-key: "v1-rust"
+
+      - name: Test
+        env:
+          RUST_LOG: ${{ runner.debug }}
+        run: cargo test --verbose
