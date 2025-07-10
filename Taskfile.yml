@@ -4,9 +4,7 @@ version: "3"
 
 tasks:
   default:
-    - task: build
-    - clear
-    - task: serve
+    - task: backend-up
 
   all:
     - task: fmt
@@ -15,6 +13,8 @@ tasks:
   build:
     cmds:
       - cargo build
+      - clear
+      - task: serve
 
   release:
     cmds:
@@ -36,3 +36,7 @@ tasks:
   serve:
     cmds:
       - ./target/debug/backend
+
+  backend-up:
+    cmds:
+      - docker compose --project-directory . -f payment-processor/docker-compose-arm64.yml -f ./docker-compose.yml up
