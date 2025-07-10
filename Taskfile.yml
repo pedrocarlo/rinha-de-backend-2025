@@ -4,7 +4,9 @@ version: "3"
 
 tasks:
   default:
-    deps: [build]
+    - task: build
+    - clear
+    - task: serve
 
   all:
     - task: fmt
@@ -18,10 +20,19 @@ tasks:
     cmds:
       - cargo build --release
 
+  check:
+    - task: fmt
+    - task: clippy
+
   fmt:
     cmds:
+      - taplo fmt
       - cargo fmt
 
   clippy:
     cmds:
       - cargo clippy
+
+  serve:
+    cmds:
+      - ./target/debug/backend

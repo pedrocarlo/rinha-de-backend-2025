@@ -11,11 +11,16 @@ path = "main.rs"
 name = "backend"
 
 [dependencies]
-axum               = { workspace = true }
+axum               = { workspace = true, features = ["query"] }
 tower              = { workspace = true }
 tokio              = { workspace = true, features = ["full"] }
 tracing            = { workspace = true }
 serde              = { workspace = true }
 serde_json         = { workspace = true }
 futures-util       = { workspace = true }
-tracing-subscriber = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
+anyhow             = "1.0.98"
+tracing-appender   = "0.2.3"
+tower-http         = { workspace = true, features = ["trace"] }
+backend_core       = { version = "0.0.1", path = "../backend_core" }
+redis              = { version = "0.32.3", features = ["aio", "tokio-comp"] }

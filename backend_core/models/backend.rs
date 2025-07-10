@@ -5,8 +5,8 @@ use serde::{Deserialize, Serialize};
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 /// Payment requisition to be processed
 pub struct PaymentsRequest {
-    correlation_id: uuid::Uuid,
-    amount: f64,
+    pub correlation_id: uuid::Uuid,
+    pub amount: f64,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -15,20 +15,20 @@ pub struct PaymentsResponse;
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct PaymentsSummaryRequest {
-    from: DateTime<Utc>,
-    to: DateTime<Utc>,
+    pub from: DateTime<Utc>,
+    pub to: DateTime<Utc>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct PaymentsSummaryResponse {
-    default: RequestMetric,
-    fallback: RequestMetric,
+    pub default: RequestMetric,
+    pub fallback: RequestMetric,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct RequestMetric {
-    total_requests: u64,
-    total_amount: f64,
+    pub total_requests: u64,
+    pub total_amount: f64,
 }

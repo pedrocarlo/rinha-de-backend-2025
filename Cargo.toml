@@ -18,12 +18,13 @@ tokio = "1.46.1"
 axum = "0.8.4"
 futures-util = "0.3.31"
 tower = "0.5.2"
+tower-http = "0.6.6"
 tracing-subscriber = "0.3.19"
 chrono = { version = "0.4.41", default-features = false, features = [
-    "serde",
-    "std",
-    "now",
-    "iana-time-zone",
+  "serde",
+  "std",
+  "now",
+  "iana-time-zone",
 ] }
 
 [profile.release]
