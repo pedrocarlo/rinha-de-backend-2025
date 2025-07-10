@@ -26,6 +26,7 @@ chrono = { version = "0.4.41", default-features = false, features = [
   "now",
   "iana-time-zone",
 ] }
+uuid = { version = "1.17.0", features = ["serde"] }
 
 [profile.release]
 debug         = "line-tables-only"

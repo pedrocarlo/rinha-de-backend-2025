@@ -15,10 +15,7 @@ mod handlers;
 async fn main() -> anyhow::Result<()> {
     let _guard = init_tracing();
 
-    let app = Router::new()
-        .route("/payments", post(create_payment))
-        .route("/payments-summary", get(get_payment_summary))
-        .layer(TraceLayer::new_for_http());
+    let app = new_app();
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:9999")
         .await
@@ -28,7 +25,14 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-pub fn init_tracing() -> WorkerGuard {
+fn new_app() -> Router {
+    Router::new()
+        .route("/payments", post(create_payment))
+        .route("/payments-summary", get(get_payment_summary))
+        .layer(TraceLayer::new_for_http())
+}
+
+fn init_tracing() -> WorkerGuard {
     let (non_blocking, guard) = tracing_appender::non_blocking(std::io::stderr());
     tracing_subscriber::registry()
         .with(
@@ -47,4 +51,50 @@ pub fn init_tracing() -> WorkerGuard {
         )
         .init();
     guard
+}
+
+// TODO: test validation logic here
+#[cfg(test)]
+mod tests {
+    use axum::http::StatusCode;
+    use axum_test::TestServer;
+    use backend_core::models::backend::PaymentsRequest;
+    use serde_json::json;
+    use uuid::Uuid;
+
+    use crate::new_app;
+
+    fn new_test_app() -> TestServer {
+        let app = new_app();
+        TestServer::builder().mock_transport().build(app).unwrap()
+    }
+
+    #[tokio::test]
+    async fn smoke_test_payments() {
+        let server = new_test_app();
+
+        let request = PaymentsRequest {
+            correlation_id: Uuid::new_v4(),
+            amount: 1000.00,
+        };
+
+        let response = server
+            .post("/payments")
+            .json(&request)
+            .expect_success()
+            .await;
+        assert_eq!(response.status_code(), StatusCode::CREATED);
+    }
+
+    #[tokio::test]
+    async fn smoke_test_payments_fail() {
+        let server = new_test_app();
+
+        let response = server
+            .post("/payments")
+            .json(&json!(""))
+            .expect_failure()
+            .await;
+        response.assert_status_failure();
+    }
 }

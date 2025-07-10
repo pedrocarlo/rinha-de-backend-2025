@@ -7,6 +7,7 @@ use tracing::{Level, instrument};
 
 #[instrument(ret(level = Level::DEBUG))]
 pub async fn create_payment(Json(payment): Json<PaymentsRequest>) -> impl IntoResponse {
+    // TODO: add validation to amount value
     (StatusCode::CREATED, Json(PaymentsResponse))
 }
 

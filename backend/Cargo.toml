@@ -24,3 +24,5 @@ tracing-appender   = "0.2.3"
 tower-http         = { workspace = true, features = ["trace"] }
 backend_core       = { version = "0.0.1", path = "../backend_core" }
 redis              = { version = "0.32.3", features = ["aio", "tokio-comp"] }
+axum-test          = "17.3.0"
+uuid               = { workspace = true, features = ["serde", "v4"] }
