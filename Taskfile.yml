@@ -34,6 +34,10 @@ tasks:
       - cargo clippy
 
   serve:
+    env:
+      REDIS_URL: "redis://127.0.0.1:6379"
+      PROCESSOR_DEFAULT_URL: "http://payment-processor-default:8080"
+      PROCESSOR_FALLBACK_URL: "http://payment-processor-fallback:8080"
     cmds:
       - ./target/debug/backend
 
@@ -43,7 +47,7 @@ tasks:
     cmds:
       - clear
       - docker compose -f payment-processor/docker-compose-arm64.yml up --detach
-      - docker compose -f ./docker-compose.yml up --build api
+      - docker compose -f ./docker-compose.yml up --build api --attach redis --attach api 
 
   backend-down:
     cmds:

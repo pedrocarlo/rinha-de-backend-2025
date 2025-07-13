@@ -13,17 +13,18 @@ use backend_core::models::{
 };
 use redis::AsyncCommands;
 use tokio_retry::{Retry, strategy::ExponentialBackoff};
-// use tracing::{Level, instrument};
+use tracing::{Level, instrument};
 
 use crate::state::AppState;
 
-// #[instrument(ret(level = Level::DEBUG))]
+#[instrument(skip_all, ret(level = Level::DEBUG))]
 pub async fn create_payment(
     State(state): State<AppState>,
     Json(payment): Json<PaymentsRequest>,
 ) -> impl IntoResponse {
     // TODO: add validation to amount value
     // Call process_payment with retry logic
+    tracing::info!(?payment);
     let result = process_payment(state, payment).await;
     match result {
         Ok(_) => (StatusCode::CREATED, Json(PaymentsResponse)),
@@ -34,6 +35,7 @@ pub async fn create_payment(
     }
 }
 
+#[instrument(skip_all, err)]
 async fn process_payment(state: AppState, payment: PaymentsRequest) -> anyhow::Result<()> {
     let http_client = &state.http_client;
     let mut conn = state
@@ -63,11 +65,12 @@ async fn process_payment(state: AppState, payment: PaymentsRequest) -> anyhow::R
     Ok(())
 }
 
-// #[instrument(ret(level = Level::DEBUG))]
+// #[instrument(skip_all, ret(level = Level::DEBUG))]
 pub async fn get_payment_summary(
     State(state): State<AppState>,
     Query(summary_request): Query<PaymentsSummaryRequest>,
 ) -> impl IntoResponse {
+    tracing::info!(?summary_request);
     let res = PaymentsSummaryResponse {
         default: RequestMetric {
             total_requests: 0,
@@ -80,3 +83,5 @@ pub async fn get_payment_summary(
     };
     (StatusCode::CREATED, Json(res))
 }
+
+async fn get_summaries(state: AppState, summary_request: PaymentsSummaryRequest) {}

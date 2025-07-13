@@ -2,9 +2,9 @@ use std::{ops::Deref, sync::Arc};
 
 use url::Url;
 
-const DEFAULT_URL_ENV_NAME: &str = "PROCESSOR_DEFAULT_URL";
-const FALLBACK_URL_ENV_NAME: &str = "PROCESSOR_FALLBACK_URL";
-const REDIS_URL_ENV_NAME: &str = "REDIS_URL";
+pub const DEFAULT_URL_ENV_NAME: &str = "PROCESSOR_DEFAULT_URL";
+pub const FALLBACK_URL_ENV_NAME: &str = "PROCESSOR_FALLBACK_URL";
+pub const REDIS_URL_ENV_NAME: &str = "REDIS_URL";
 
 #[derive(Debug, Clone)]
 pub struct AppState {

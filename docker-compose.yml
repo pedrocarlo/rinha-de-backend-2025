@@ -6,15 +6,14 @@ services:
       dockerfile: ./Dockerfile
     hostname: api
     environment:
-      - REDIS_URL=redis://localhost:6379
+      - REDIS_URL=redis://redis:6379
       - PROCESSOR_DEFAULT_URL=http://payment-processor-default:8080
       - PROCESSOR_FALLBACK_URL=http://payment-processor-fallback:8080
     networks:
       - backend
       - payment-processor
     depends_on:
-      redis:
-        condition: service_healthy
+      - redis
     ports:
       - "9999:9999"
     deploy:
@@ -26,8 +25,11 @@ services:
   redis:
     image: redis:7.2-alpine
     container_name: redis
+    command: redis-server --save "" --appendonly no --maxclients 20000
     networks:
       - backend
+    ports:
+      - "6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s

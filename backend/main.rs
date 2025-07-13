@@ -19,11 +19,11 @@ mod state;
 async fn main() -> anyhow::Result<()> {
     let _guard = init_tracing();
 
-    let app = new_app();
+    let state = AppState::new();
 
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:9999")
-        .await
-        .unwrap();
+    let app = new_app(state);
+
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:9999").await.unwrap();
     tracing::info!("listening on {}", listener.local_addr().unwrap());
     axum::serve(listener, app)
         .with_graceful_shutdown(shutdown_signal())
@@ -31,11 +31,11 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn new_app() -> Router {
+fn new_app(state: AppState) -> Router {
     Router::new()
         .route("/payments", post(create_payment))
         .route("/payments-summary", get(get_payment_summary))
-        .with_state(AppState::new())
+        .with_state(state)
         .layer(TraceLayer::new_for_http())
 }
 
@@ -95,10 +95,11 @@ mod tests {
     use serde_json::json;
     use uuid::Uuid;
 
-    use crate::new_app;
+    use crate::{new_app, state::AppState};
 
     fn new_test_app() -> TestServer {
-        let app = new_app();
+        let state = AppState::new();
+        let app = new_app(state);
         TestServer::builder().mock_transport().build(app).unwrap()
     }
 
