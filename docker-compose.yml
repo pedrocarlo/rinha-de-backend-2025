@@ -6,7 +6,7 @@ services:
       dockerfile: ./Dockerfile
     hostname: api
     environment:
-      - REDIS_URL=redis:6379
+      - REDIS_URL=redis://localhost:6379
       - PROCESSOR_DEFAULT_URL=http://payment-processor-default:8080
       - PROCESSOR_FALLBACK_URL=http://payment-processor-fallback:8080
     networks:

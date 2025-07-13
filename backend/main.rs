@@ -7,9 +7,13 @@ use tracing::level_filters::LevelFilter;
 use tracing_appender::non_blocking::WorkerGuard;
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 
-use crate::handlers::{create_payment, get_payment_summary};
+use crate::{
+    handlers::{create_payment, get_payment_summary},
+    state::AppState,
+};
 
 mod handlers;
+mod state;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -21,7 +25,9 @@ async fn main() -> anyhow::Result<()> {
         .await
         .unwrap();
     tracing::info!("listening on {}", listener.local_addr().unwrap());
-    axum::serve(listener, app).await?;
+    axum::serve(listener, app)
+        .with_graceful_shutdown(shutdown_signal())
+        .await?;
     Ok(())
 }
 
@@ -29,6 +35,7 @@ fn new_app() -> Router {
     Router::new()
         .route("/payments", post(create_payment))
         .route("/payments-summary", get(get_payment_summary))
+        .with_state(AppState::new())
         .layer(TraceLayer::new_for_http())
 }
 
@@ -51,6 +58,32 @@ fn init_tracing() -> WorkerGuard {
         )
         .init();
     guard
+}
+
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        tokio::signal::ctrl_c()
+            .await
+            .expect("failed to install Ctrl+C handler");
+    };
+
+    #[cfg(unix)]
+    let terminate = async {
+        use tokio::signal;
+
+        signal::unix::signal(signal::unix::SignalKind::terminate())
+            .expect("failed to install signal handler")
+            .recv()
+            .await;
+    };
+
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+
+    tokio::select! {
+        _ = ctrl_c => {},
+        _ = terminate => {},
+    }
 }
 
 // TODO: test validation logic here

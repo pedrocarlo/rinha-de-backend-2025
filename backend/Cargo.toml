@@ -12,7 +12,7 @@ name = "backend"
 
 [dependencies]
 axum               = { workspace = true, features = ["query"] }
-tower              = { workspace = true }
+tower              = { workspace = true, features = ["retry"] }
 tokio              = { workspace = true, features = ["full"] }
 tracing            = { workspace = true }
 serde              = { workspace = true }
@@ -26,3 +26,6 @@ backend_core       = { version = "0.0.1", path = "../backend_core" }
 redis              = { version = "0.32.3", features = ["aio", "tokio-comp"] }
 axum-test          = "17.3.0"
 uuid               = { workspace = true, features = ["serde", "v4"] }
+url                = "2.5.4"
+reqwest            = { version = "0.12.22", features = ["json"] }
+tokio-retry        = "0.3"

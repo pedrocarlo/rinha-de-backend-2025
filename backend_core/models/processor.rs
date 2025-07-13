@@ -6,38 +6,48 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct ProcessorPaymentsRequest {
-    correlation_id: uuid::Uuid,
-    amount: f64,
-    requested_at: DateTime<Utc>,
+    pub correlation_id: uuid::Uuid,
+    pub amount: f64,
+    pub requested_at: DateTime<Utc>,
+}
+
+impl ProcessorPaymentsRequest {
+    pub fn new(amount: f64, correlation_id: uuid::Uuid) -> Self {
+        Self {
+            correlation_id,
+            amount,
+            requested_at: Utc::now(),
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct ProcessorPaymentsResponse {
-    message: String,
+    pub message: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct ProcessorHealthCheck {
-    failing: bool,
-    min_response_time: u32,
+    pub failing: bool,
+    pub min_response_time: u32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct ProcessorPaymentsIdRequest {
-    id: uuid::Uuid,
+    pub id: uuid::Uuid,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct ProcessorPaymentsIdResponse {
-    inner: ProcessorPaymentsResponse,
+    pub inner: ProcessorPaymentsRequest,
 }
 
 impl Deref for ProcessorPaymentsIdResponse {
-    type Target = ProcessorPaymentsResponse;
+    type Target = ProcessorPaymentsRequest;
 
     fn deref(&self) -> &Self::Target {
         &self.inner

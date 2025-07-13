@@ -1,4 +1,8 @@
 FROM lukemathwalker/cargo-chef:0.1.72-rust-1.88.0-slim-bullseye AS chef
+RUN apt update \
+    && apt install -y git libssl-dev pkg-config\
+    && apt clean \
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
 #

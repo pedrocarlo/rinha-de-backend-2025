@@ -38,5 +38,15 @@ tasks:
       - ./target/debug/backend
 
   backend-up:
+    env:
+      COMPOSE_BAKE: true
     cmds:
-      - docker compose --project-directory . -f payment-processor/docker-compose-arm64.yml -f ./docker-compose.yml up
+      - clear
+      - docker compose -f payment-processor/docker-compose-arm64.yml up --detach
+      - docker compose -f ./docker-compose.yml up --build api
+
+  backend-down:
+    cmds:
+      - clear
+      - docker compose -f payment-processor/docker-compose-arm64.yml down
+      - docker compose -f ./docker-compose.yml down
