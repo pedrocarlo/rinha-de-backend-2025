@@ -4,7 +4,7 @@ version: "3"
 
 tasks:
   default:
-    - task: backend-up
+    - task: up
 
   all:
     - task: fmt
@@ -41,7 +41,7 @@ tasks:
     cmds:
       - ./target/debug/backend
 
-  backend-up:
+  up:
     env:
       COMPOSE_BAKE: true
     cmds:
@@ -49,7 +49,7 @@ tasks:
       - docker compose -f payment-processor/docker-compose-arm64.yml up --detach
       - docker compose -f ./docker-compose.yml up --build api --attach redis --attach api 
 
-  backend-down:
+  down:
     cmds:
       - clear
       - docker compose -f payment-processor/docker-compose-arm64.yml down

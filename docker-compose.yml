@@ -15,7 +15,7 @@ services:
     depends_on:
       - redis
     ports:
-      - "9999:9999"
+      - 9999:9999
     deploy:
       # resources:
       #   limits:
@@ -29,7 +29,7 @@ services:
     networks:
       - backend
     ports:
-      - "6379:6379"
+      - 6379:6379
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s

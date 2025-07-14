@@ -1,4 +1,4 @@
-use std::{ops::Deref, sync::Arc};
+use std::sync::Arc;
 
 use url::Url;
 
@@ -6,41 +6,24 @@ pub const DEFAULT_URL_ENV_NAME: &str = "PROCESSOR_DEFAULT_URL";
 pub const FALLBACK_URL_ENV_NAME: &str = "PROCESSOR_FALLBACK_URL";
 pub const REDIS_URL_ENV_NAME: &str = "REDIS_URL";
 
+/// Stores Clients and Urls
 #[derive(Debug, Clone)]
 pub struct AppState {
-    inner: Arc<AppStateInner>,
+    pub default_url: Arc<Url>,
+    pub fallback_url: Arc<Url>,
+    pub http_client: reqwest::Client,
+    pub redis_client: redis::Client,
 }
 
 impl AppState {
     pub fn new() -> Self {
         Self {
-            inner: Arc::new(AppStateInner::new()),
-        }
-    }
-}
-
-impl Deref for AppState {
-    type Target = AppStateInner;
-
-    fn deref(&self) -> &Self::Target {
-        &self.inner
-    }
-}
-
-///
-#[derive(Debug)]
-pub struct AppStateInner {
-    pub default_url: Url,
-    pub fallback_url: Url,
-    pub http_client: reqwest::Client,
-    pub redis_client: redis::Client,
-}
-
-impl AppStateInner {
-    pub fn new() -> Self {
-        Self {
-            default_url: Url::parse(&std::env::var(DEFAULT_URL_ENV_NAME).unwrap()).unwrap(),
-            fallback_url: Url::parse(&std::env::var(FALLBACK_URL_ENV_NAME).unwrap()).unwrap(),
+            default_url: Arc::new(
+                Url::parse(&std::env::var(DEFAULT_URL_ENV_NAME).unwrap()).unwrap(),
+            ),
+            fallback_url: Arc::new(
+                Url::parse(&std::env::var(FALLBACK_URL_ENV_NAME).unwrap()).unwrap(),
+            ),
             http_client: reqwest::Client::new(),
             redis_client: redis::Client::open(std::env::var(REDIS_URL_ENV_NAME).unwrap()).unwrap(),
         }
