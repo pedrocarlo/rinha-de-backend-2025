@@ -41,16 +41,22 @@ tasks:
     cmds:
       - ./target/debug/backend
 
+  reset-redis:
+    cmds:
+      - redis-cli DEL fallback_set
+      - redis-cli DEL default_set
+
   up:
     env:
       COMPOSE_BAKE: true
     cmds:
       - clear
       - docker compose -f payment-processor/docker-compose-arm64.yml up --detach
-      - docker compose -f ./docker-compose.yml up --build api --attach redis --attach api 
+      - docker compose -f ./docker-compose.yml up --build api --attach redis --attach api
 
   down:
     cmds:
       - clear
       - docker compose -f payment-processor/docker-compose-arm64.yml down
+      - task: reset-redis
       - docker compose -f ./docker-compose.yml down
