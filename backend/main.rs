@@ -52,9 +52,9 @@ fn init_tracing() -> WorkerGuard {
         .with(
             EnvFilter::builder()
                 .with_default_directive(LevelFilter::INFO.into())
-                .from_env_lossy()
-                .add_directive("tower_http=debug".parse().unwrap())
-                .add_directive("axum::rejection=trace".parse().unwrap()),
+                .with_default_directive("tower_http=debug".parse().unwrap())
+                .with_default_directive("axum::rejection=trace".parse().unwrap())
+                .from_env_lossy(),
         )
         .init();
     guard

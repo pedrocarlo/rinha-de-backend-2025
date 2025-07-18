@@ -13,7 +13,7 @@ use backend_core::models::{
 };
 use futures_util::TryFutureExt;
 use redis::{AsyncTypedCommands, ToRedisArgs};
-use tokio_retry::{Retry, strategy::ExponentialBackoff};
+use tokio_retry::{Retry, strategy::FibonacciBackoff};
 use tracing::{Level, instrument};
 
 use crate::state::AppState;
@@ -52,16 +52,17 @@ async fn process_payment(state: AppState, payment: PaymentsRequest) -> anyhow::R
     let request = ProcessorPaymentsRequest::new(payment.amount, payment.correlation_id);
 
     // Retry logic for the outbound HTTP request
-    let retry_strategy = ExponentialBackoff::from_millis(10)
-        .max_delay(std::time::Duration::from_millis(100))
-        .take(5);
+    let retry_strategy =
+        FibonacciBackoff::from_millis(5).max_delay(std::time::Duration::from_millis(100));
     let default_payment_url = state.default_url.join("payments").unwrap();
     let fallback_payment_url = state.fallback_url.join("payments").unwrap();
     let request_ref = &request;
+    let timeout = std::time::Duration::from_millis(10);
     let server = Retry::spawn(retry_strategy, || async {
         http_client
             .post(default_payment_url.as_str())
             .json(request_ref)
+            .timeout(timeout)
             .send()
             .and_then(|res| {
                 async { res.error_for_status() }.and_then(|_| async { Ok(ServerPayment::Default) })
@@ -70,6 +71,7 @@ async fn process_payment(state: AppState, payment: PaymentsRequest) -> anyhow::R
                 http_client
                     .post(fallback_payment_url.as_str())
                     .json(request_ref)
+                    .timeout(timeout)
                     .send()
                     .await?
                     .error_for_status()
@@ -78,7 +80,6 @@ async fn process_payment(state: AppState, payment: PaymentsRequest) -> anyhow::R
             .await
     })
     .await?;
-    tracing::info!(val = serde_json::to_string(&request).unwrap());
 
     // TODO: Serialization overhead here for storing data
     // Maybe use BSON or BINCODE or some other format here instead
