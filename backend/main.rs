@@ -1,19 +1,25 @@
+use async_channel::{Sender, unbounded};
 use axum::{
     Router,
     routing::{get, post},
 };
+use backend_core::models::backend::PaymentsRequest;
 use tower_http::trace::TraceLayer;
 use tracing::level_filters::LevelFilter;
 use tracing_appender::non_blocking::WorkerGuard;
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 
 use crate::{
-    handlers::{create_payment, get_payment_summary},
+    handlers::{create_payment, get_payment_summary, purge_payments},
     state::AppState,
+    util::shutdown_signal,
+    worker::Worker,
 };
 
 mod handlers;
 mod state;
+mod util;
+mod worker;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -32,11 +38,28 @@ async fn main() -> anyhow::Result<()> {
 }
 
 fn new_app(state: AppState) -> Router {
+    let sender = init_workers(state.clone());
+
     Router::new()
-        .route("/payments", post(create_payment))
         .route("/payments-summary", get(get_payment_summary))
+        .route("/purge-payments", post(purge_payments))
         .with_state(state)
+        .route("/payments", post(create_payment))
+        .with_state(sender)
         .layer(TraceLayer::new_for_http())
+}
+
+fn init_workers(state: AppState) -> Sender<PaymentsRequest> {
+    let (sender, receiver) = unbounded::<PaymentsRequest>();
+    let workers = std::iter::repeat_with(|| Worker {
+        channel: receiver.clone(),
+        state: state.clone(),
+    })
+    .take(1);
+    for worker in workers {
+        tokio::spawn(worker.process_payments());
+    }
+    sender
 }
 
 fn init_tracing() -> WorkerGuard {
@@ -58,32 +81,6 @@ fn init_tracing() -> WorkerGuard {
         )
         .init();
     guard
-}
-
-async fn shutdown_signal() {
-    let ctrl_c = async {
-        tokio::signal::ctrl_c()
-            .await
-            .expect("failed to install Ctrl+C handler");
-    };
-
-    #[cfg(unix)]
-    let terminate = async {
-        use tokio::signal;
-
-        signal::unix::signal(signal::unix::SignalKind::terminate())
-            .expect("failed to install signal handler")
-            .recv()
-            .await;
-    };
-
-    #[cfg(not(unix))]
-    let terminate = std::future::pending::<()>();
-
-    tokio::select! {
-        _ = ctrl_c => {},
-        _ = terminate => {},
-    }
 }
 
 // TODO: test validation logic here

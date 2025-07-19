@@ -1,10 +1,10 @@
 services:
-  api:
+  api1: &api
     # image: Dockerfile # TODO set image here
     build:
       context: .
       dockerfile: ./Dockerfile
-    hostname: api
+    hostname: api1
     environment:
       - REDIS_URL=redis://redis:6379
       - PROCESSOR_DEFAULT_URL=http://payment-processor-default:8080
@@ -13,15 +13,41 @@ services:
     networks:
       - backend
       - payment-processor
+    ports:
+      - :9999
     depends_on:
       - redis
+      - nginx
+    deploy:
+      resources:
+        limits:
+          cpus: "0.575"
+          memory: "200MB"
+  
+  api2:
+    <<: *api
+    hostname: api2
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - PROCESSOR_DEFAULT_URL=http://payment-processor-default:8080
+      - PROCESSOR_FALLBACK_URL=http://payment-processor-fallback:8080
+      - RUST_LOG=info
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
     ports:
       - 9999:9999
+    networks:
+      - backend
+      - payment-processor
     deploy:
-      # resources:
-      #   limits:
-      #     cpus: "0.55"
-      #     memory: "30MB"
+      resources:
+        limits:
+          cpus: "0.1"
+          memory: 80M
 
   redis:
     image: redis:7.2-alpine
@@ -40,7 +66,7 @@ services:
       resources:
         limits:
           cpus: "0.25"
-          memory: "275MB"
+          memory: "200MB"
 
 networks:
   backend:

@@ -43,8 +43,10 @@ tasks:
 
   reset-redis:
     cmds:
+      - docker compose -f ./docker-compose.yml up -d redis
       - redis-cli DEL fallback_set
       - redis-cli DEL default_set
+      - docker compose -f ./docker-compose.yml down
 
   k6:
     # env:
@@ -60,17 +62,13 @@ tasks:
   up:
     env:
       COMPOSE_BAKE: true
-      RUST_LOG: off
     cmds:
       - clear
       - docker compose -f payment-processor/docker-compose-arm64.yml up --detach
-      - docker compose -f ./docker-compose.yml up --build api --attach redis --attach api
-      - task: reset-redis
-    interactive: true
+      - docker compose up --build api1 --build api2 --detach 
 
   down:
     cmds:
       - clear
       - docker compose -f payment-processor/docker-compose-arm64.yml down
-      - task: reset-redis
       - docker compose -f ./docker-compose.yml down

@@ -24,7 +24,10 @@ impl AppState {
             fallback_url: Arc::new(
                 Url::parse(&std::env::var(FALLBACK_URL_ENV_NAME).unwrap()).unwrap(),
             ),
-            http_client: reqwest::Client::new(),
+            http_client: reqwest::ClientBuilder::new()
+                .pool_max_idle_per_host(1000) // Max idle connections per host
+                .build()
+                .unwrap(),
             redis_client: redis::Client::open(std::env::var(REDIS_URL_ENV_NAME).unwrap()).unwrap(),
         }
     }
