@@ -1,14 +1,16 @@
 use std::ops::{Deref, DerefMut};
 
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
+
+use crate::models::RoundedDateTime;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct ProcessorPaymentsRequest {
     pub correlation_id: uuid::Uuid,
     pub amount: f64,
-    pub requested_at: DateTime<Utc>,
+    pub requested_at: RoundedDateTime,
 }
 
 impl ProcessorPaymentsRequest {
@@ -16,7 +18,7 @@ impl ProcessorPaymentsRequest {
         Self {
             correlation_id,
             amount,
-            requested_at: Utc::now(),
+            requested_at: Utc::now().into(),
         }
     }
 }

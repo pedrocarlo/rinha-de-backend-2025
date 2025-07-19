@@ -53,11 +53,11 @@ async fn process_payment(state: AppState, payment: PaymentsRequest) -> anyhow::R
 
     // Retry logic for the outbound HTTP request
     let retry_strategy =
-        FibonacciBackoff::from_millis(5).max_delay(std::time::Duration::from_millis(100));
+        FibonacciBackoff::from_millis(20).max_delay(std::time::Duration::from_millis(100));
     let default_payment_url = state.default_url.join("payments").unwrap();
     let fallback_payment_url = state.fallback_url.join("payments").unwrap();
     let request_ref = &request;
-    let timeout = std::time::Duration::from_millis(10);
+    let timeout = std::time::Duration::from_millis(50);
     let server = Retry::spawn(retry_strategy, || async {
         http_client
             .post(default_payment_url.as_str())
@@ -90,7 +90,7 @@ async fn process_payment(state: AppState, payment: PaymentsRequest) -> anyhow::R
         ServerPayment::Fallback => FALLBACK_SET,
     };
 
-    conn.zadd(set, val, request.requested_at.timestamp())
+    conn.zadd(set, val, request.requested_at.timestamp_micros())
         .await
         .inspect_err(|err| tracing::error!(?err))?;
     Ok(())
@@ -127,12 +127,12 @@ async fn get_summaries(
     let min = summary_request
         .from
         .map_or(f64::NEG_INFINITY.to_redis_args(), |from| {
-            from.timestamp().to_redis_args()
+            from.timestamp_micros().to_redis_args()
         });
     let max = summary_request
         .to
         .map_or(f64::INFINITY.to_redis_args(), |to| {
-            to.timestamp().to_redis_args()
+            to.timestamp_micros().to_redis_args()
         });
 
     // TODO: see later if we need to chunk our operations to not have unbounded memory usage from this request

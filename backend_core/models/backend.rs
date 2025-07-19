@@ -1,7 +1,8 @@
 use std::ops::{Add, AddAssign};
 
-use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+
+use crate::models::RoundedDateTime;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
@@ -17,8 +18,8 @@ pub struct PaymentsResponse;
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct PaymentsSummaryRequest {
-    pub from: Option<DateTime<Utc>>,
-    pub to: Option<DateTime<Utc>>,
+    pub from: Option<RoundedDateTime>,
+    pub to: Option<RoundedDateTime>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]
