@@ -40,7 +40,6 @@ pub async fn create_payment(
     (StatusCode::OK, Json(PaymentsResponse))
 }
 
-#[instrument(skip_all, ret(level = Level::INFO))]
 pub async fn get_payment_summary(
     State(state): State<AppState>,
     Query(summary_request): Query<PaymentsSummaryRequest>,
@@ -82,26 +81,36 @@ async fn get_summaries(
         .get_multiplexed_tokio_connection()
         .await?;
 
-    let vals = conn
+    let mut pipe = redis::pipe();
+    let (default_vals, fallback_val): (Vec<String>, Vec<String>) = pipe
+        .atomic()
         .zrangebyscore(DEFAULT_SET, &min, &max)
-        .await?
-        .into_iter()
-        .map(|val| serde_json::from_str::<ProcessorPaymentsRequest>(&val));
+        .zrangebyscore(FALLBACK_SET, &min, &max)
+        .query_async(&mut conn)
+        .await?;
+
     let mut default = RequestMetric::default();
+    let mut fallback = RequestMetric::default();
+
+    // TODO: very inneficient
+    let vals = default_vals.into_iter().map(|v| {
+        serde_json::from_str::<ProcessorPaymentsRequest>(&v)
+            .unwrap()
+            .amount
+    });
     for val in vals {
         default.total_requests += 1;
-        default.total_amount += val?.amount;
+        default.total_amount += val;
     }
 
-    let vals = conn
-        .zrangebyscore(FALLBACK_SET, min, max)
-        .await?
-        .into_iter()
-        .map(|val| serde_json::from_str::<ProcessorPaymentsRequest>(&val));
-    let mut fallback = RequestMetric::default();
+    let vals = fallback_val.into_iter().map(|v| {
+        serde_json::from_str::<ProcessorPaymentsRequest>(&v)
+            .unwrap()
+            .amount
+    });
     for val in vals {
         fallback.total_requests += 1;
-        fallback.total_amount += val?.amount;
+        fallback.total_amount += val;
     }
 
     Ok(PaymentsSummaryResponse { default, fallback })
