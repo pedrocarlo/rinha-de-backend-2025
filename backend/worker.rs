@@ -1,9 +1,8 @@
 use backend_core::models::{backend::PaymentsRequest, processor::ProcessorPaymentsRequest};
-use futures_util::{StreamExt, TryFutureExt, pin_mut, stream::FuturesUnordered};
+use futures_util::{StreamExt, pin_mut, stream::FuturesUnordered};
 use redis::AsyncTypedCommands;
 use tokio::select;
 use tokio_retry::{Retry, strategy::FibonacciBackoff};
-use tracing::instrument;
 
 use crate::{
     handlers::{DEFAULT_SET, FALLBACK_SET, ServerPayment},
@@ -25,7 +24,7 @@ impl Worker {
 
         loop {
             select! {
-                Some(payment) = channel.next(), if (futs.is_empty() || futs.len() < 100) => futs.push(self.process_payment(payment)),
+                Some(payment) = channel.next(), if (futs.is_empty() || futs.len() < 20) => futs.push(self.process_payment(payment)),
                 _ = futs.next(), if !futs.is_empty() => {},
                 _ = shutdown_signal() => break
             }
@@ -34,7 +33,6 @@ impl Worker {
         println!("Task shutting down gracefully");
     }
 
-    #[instrument(skip_all, err)]
     async fn process_payment(&self, payment: PaymentsRequest) -> anyhow::Result<()> {
         let state = &self.state;
         let http_client = &state.http_client;
@@ -47,30 +45,45 @@ impl Worker {
         let default_payment_url = state.default_url.join("payments").unwrap();
         let fallback_payment_url = state.fallback_url.join("payments").unwrap();
         let request_ref = &request;
-        let timeout = std::time::Duration::from_millis(50);
+        let timeout = std::time::Duration::from_millis(100);
         let server = Retry::spawn(retry_strategy, || async {
-            http_client
+            let res_default = http_client
                 .post(default_payment_url.as_str())
                 .json(request_ref)
                 .timeout(timeout)
                 .send()
-                .and_then(|res| {
-                    async { res.error_for_status() }
-                        .and_then(|_| async { Ok(ServerPayment::Default) })
-                })
-                .or_else(|_| async {
-                    http_client
-                        .post(fallback_payment_url.as_str())
-                        .json(request_ref)
-                        .timeout(timeout)
-                        .send()
-                        .await?
-                        .error_for_status()
-                        .map(|_| ServerPayment::Fallback)
-                })
-                .await
+                .await?;
+
+            match res_default.error_for_status() {
+                Ok(_) => {
+                    return Ok(Some(ServerPayment::Default));
+                }
+                Err(err) if err.is_timeout() => {}
+                Err(_) => {
+                    return Ok(None);
+                }
+            }
+
+            let res_fallback = http_client
+                .post(fallback_payment_url.as_str())
+                .json(request_ref)
+                .timeout(timeout)
+                .send()
+                .await?;
+
+            match res_fallback.error_for_status() {
+                Ok(_) => {
+                    return Ok(Some(ServerPayment::Fallback));
+                }
+                Err(err) if err.is_timeout() => return Err(err),
+                Err(_) => {
+                    return Ok(None);
+                }
+            }
         })
         .await?;
+
+        let Some(server) = server else { return Ok(()) };
 
         // TODO: Serialization overhead here for storing data
         // Maybe use BSON or BINCODE or some other format here instead

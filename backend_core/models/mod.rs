@@ -3,10 +3,11 @@ pub mod processor;
 
 use std::ops::{Deref, DerefMut};
 
-use chrono::{DateTime, SubsecRound, Utc};
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(transparent)]
 pub struct RoundedDateTime(pub DateTime<Utc>);
 
 impl Deref for RoundedDateTime {
@@ -23,25 +24,25 @@ impl DerefMut for RoundedDateTime {
     }
 }
 
-impl Serialize for RoundedDateTime {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let rounded = self.0.round_subsecs(6);
-        rounded.serialize(serializer)
-    }
-}
+// impl Serialize for RoundedDateTime {
+//     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+//     where
+//         S: Serializer,
+//     {
+//         let rounded = self.0;
+//         rounded.serialize(serializer)
+//     }
+// }
 
-impl<'de> Deserialize<'de> for RoundedDateTime {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let dt = DateTime::<Utc>::deserialize(deserializer)?;
-        Ok(RoundedDateTime(dt.round_subsecs(6)))
-    }
-}
+// impl<'de> Deserialize<'de> for RoundedDateTime {
+//     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+//     where
+//         D: Deserializer<'de>,
+//     {
+//         let dt = DateTime::<Utc>::deserialize(deserializer)?;
+//         Ok(RoundedDateTime(dt))
+//     }
+// }
 
 impl From<DateTime<Utc>> for RoundedDateTime {
     fn from(value: DateTime<Utc>) -> Self {

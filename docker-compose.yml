@@ -1,6 +1,5 @@
 services:
-  api1: &api
-    # image: Dockerfile # TODO set image here
+  api1: &api # image: Dockerfile # TODO set image here
     build:
       context: .
       dockerfile: ./Dockerfile
@@ -21,17 +20,12 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.575"
-          memory: "200MB"
-  
+          cpus: "0.380"
+          memory: "80MB"
+
   api2:
     <<: *api
     hostname: api2
-    environment:
-      - REDIS_URL=redis://redis:6379
-      - PROCESSOR_DEFAULT_URL=http://payment-processor-default:8080
-      - PROCESSOR_FALLBACK_URL=http://payment-processor-fallback:8080
-      - RUST_LOG=info
 
   nginx:
     image: nginx:latest
@@ -47,7 +41,7 @@ services:
       resources:
         limits:
           cpus: "0.1"
-          memory: 80M
+          memory: 50M
 
   redis:
     image: redis:7.2-alpine
@@ -66,7 +60,7 @@ services:
       resources:
         limits:
           cpus: "0.25"
-          memory: "200MB"
+          memory: "50MB"
 
 networks:
   backend:
