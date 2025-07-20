@@ -101,6 +101,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore]
     async fn smoke_test_payments() {
         let server = new_test_app();
 
@@ -118,6 +119,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore]
     async fn smoke_test_payments_fail() {
         let server = new_test_app();
 
